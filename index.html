@@ -50,6 +50,12 @@
         #result a:hover {
             text-decoration: underline;
         }
+        h4 {
+            margin-bottom: 5px;
+        }
+        p{
+            margin-top:0;
+        }
     </style>
 </head>
 <body>
@@ -102,6 +108,35 @@
             return str;
         }
 
+        async function loadJsonLocalOrRemote(localPath, remoteUrl) {
+            const filename = localPath.split('/').pop();
+
+            if (location.protocol === 'file:') {
+                console.log(`Running from file://, using remote ${filename}`);
+                const response = await fetch(remoteUrl);
+                if (!response.ok) {
+                    throw new Error('Remote fetch failed');
+                }
+                return await response.json();
+            }
+
+            try {
+                const response = await fetch(localPath);
+                if (!response.ok) {
+                    throw new Error('Local file not found');
+                }
+                console.log(`Using local ${filename}`);
+                return await response.json();
+            } catch (e) {
+                console.log(`Local ${filename} not found, using remote`);
+                const response = await fetch(remoteUrl);
+                if (!response.ok) {
+                    throw new Error('Remote fetch failed');
+                }
+                return await response.json();
+            }
+        }
+
         async function getPhoneInfo() {
             const input = document.getElementById('phoneInput');
             const resultDiv = document.getElementById('result');
@@ -127,11 +162,12 @@
                 return;
             }
 
+            const displayNum = '0' + normalized.substring(2);
+
             // Fetch providers if not loaded
             if (Object.keys(providers).length === 0) {
                 try {
-                    const respP = await fetch('https://raw.githubusercontent.com/sebszz/uk-number-range-holders/refs/heads/main/numberProviders.json');
-                    providers = await respP.json();
+                    providers = await loadJsonLocalOrRemote('./numberProviders.json', 'https://raw.githubusercontent.com/sebszz/uk-number-range-holders/refs/heads/main/numberProviders.json');
                 } catch (e) {
                     resultDiv.textContent = 'Error fetching provider data.';
                     return;
@@ -141,8 +177,7 @@
             // Fetch area codes if not loaded
             if (Object.keys(areaMap).length === 0) {
                 try {
-                    const respA = await fetch('https://raw.githubusercontent.com/sebszz/uk-number-range-holders/refs/heads/main/areaCodes.json');
-                    const areaData = await respA.json();
+                    const areaData = await loadJsonLocalOrRemote('./areaCodes.json', 'https://raw.githubusercontent.com/sebszz/uk-number-range-holders/refs/heads/main/areaCodes.json');
                     areaMap = {};
                     for (let k in areaData) {
                         areaMap[k.substring(1)] = areaData[k]; // Remove '+' to get '442890'
@@ -168,7 +203,7 @@
             // Determine city/location
             let cityName;
             if (normalized.startsWith('447')) {
-                cityName = 'UK mobile number, no location assigned';
+                cityName = 'UK mobile number, so no location is assigned';
             } else {
                 // Find best area match (longest prefix)
                 let bestAreaKey = '';
@@ -185,10 +220,10 @@
             // Construct location sentence
             const locationSentence = cityName.startsWith('UK mobile') 
                 ? `This is a ${cityName}.` 
-                : `This number is also a ${cityName} number.`;
+                : `This number is also a ${cityName} area-code number.`;
 
             // Construct provider part conditionally
-            let providerPart = `Number provider is ${providerName}.`;
+            let providerPart = `Number range holder is ${providerName}.`;
             if (providerName !== 'Unknown') {
                 providerPart += ` They own the range ${rangeStr}.`;
             }
@@ -198,9 +233,13 @@
             const relativeTime = getRelativeTime(updateDateStr);
 
             // Construct result with hyperlink
-            const result = `${providerPart} ${locationSentence} Please note, the last update of number range providers has been updated on ${updateDateStr} (${relativeTime}). For the most up to date results go to <a href="https://www.ofcom.org.uk/phones-and-broadband/phone-numbers/numbering-data" target="_blank">Ofcom website</a>`;
+            const result = `${providerPart} ${locationSentence} <br/><br/>Please note, the last update of number range holders has been updated on ${updateDateStr} (${relativeTime}). For the most up to date results go to <a href="https://www.ofcom.org.uk/phones-and-broadband/phone-numbers/numbering-data" target="_blank">Ofcom website</a>. <h4>Number is ported?</h4>It's possible that ${displayNum} may have been ported to another provider. Number porting information is not publically available.`;
 
-            resultDiv.innerHTML = result;
+            // Additional link
+            const phonelyLink = `https://www.phonely.co.uk/who-called-me/${displayNum}`;
+            const additionalLink = `<h4>Check for reports</h4><p><a href="${phonelyLink}" target="_blank">Click here</a> to check if there are any online reports about calls from ${displayNum}.</p>`;
+
+            resultDiv.innerHTML = result + additionalLink;
         }
     </script>
 </body>
