@@ -114,6 +114,20 @@
             margin-bottom: 15px;
             font-weight: 500;
         }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -137,6 +151,7 @@
             <select id="providerSelect">
                 <option value="">Select a provider...</option>
             </select>
+            <div id="loading" class="loading-spinner"></div>
             <div id="rangesTable"></div>
         </div>
 
@@ -262,60 +277,72 @@
         function showProviderRanges() {
             const selectedProvider = document.getElementById('providerSelect').value;
             const tableDiv = document.getElementById('rangesTable');
+            const loadingDiv = document.getElementById('loading');
             if (!selectedProvider) {
                 tableDiv.innerHTML = '';
+                loadingDiv.style.display = 'none';
                 return;
             }
 
-            const ranges = Object.keys(providers).filter(key => providers[key] === selectedProvider).sort();
-            let totalNumbers = 0;
-            let areaCounts = {};
-            ranges.forEach(range => {
-                const L = range.length;
-                const size = Math.pow(10, 12 - L);
-                totalNumbers += size;
-                const area = getAreaForRange(range);
-                if (!areaCounts[area]) areaCounts[area] = 0;
-                areaCounts[area]++;
-            });
-            let sortedAreas = Object.entries(areaCounts).sort(([,a], [,b]) => b - a);
-            let topArea = sortedAreas[0] ? sortedAreas[0][0] : '';
-            let topCount = sortedAreas[0] ? sortedAreas[0][1] : 0;
-            let secondArea = sortedAreas[1] ? sortedAreas[1][0] : '';
-            let secondCount = sortedAreas[1] ? sortedAreas[1][1] : 0;
-            let displayTop = topArea === 'Unknown' ? 'Non-geographic' : topArea;
-            let summary = `The selected provider, ${selectedProvider}, owns ${ranges.length} number ranges. This means they own ${totalNumbers.toLocaleString()} numbers in total (please note, this number might be invalid due to many numbers being ported away to different providers). The most popular area code they own is ${displayTop}, they own ${topCount} of those ranges.`;
-            if (secondCount > 1) {
-                let displaySecond = secondArea === 'Unknown' ? 'Non-geographic' : secondArea;
-            }
-            summary = `<div class="summary">${summary}</div>`;
-            let tableHTML = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Number Range</th>
-                            <th>Area code</th>
-                            <th>Provider</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            `;
-            ranges.forEach(range => {
-                const L = range.length;
-                const numXs = 12 - L;
-                const xs = 'X'.repeat(numXs);
-                const formattedRange = '0' + range.substring(2) + xs;
-                const area = getAreaForRange(range);
-                tableHTML += `
-                    <tr>
-                        <td>${formattedRange}</td>
-                        <td>${area}</td>
-                        <td>${selectedProvider}</td>
-                    </tr>
+            // Show loading spinner
+            loadingDiv.style.display = 'block';
+            tableDiv.innerHTML = '';
+
+            // Use setTimeout to allow UI to update before heavy processing
+            setTimeout(() => {
+                const ranges = Object.keys(providers).filter(key => providers[key] === selectedProvider).sort();
+                let totalNumbers = 0;
+                let areaCounts = {};
+                ranges.forEach(range => {
+                    const L = range.length;
+                    const size = Math.pow(10, 12 - L);
+                    totalNumbers += size;
+                    const area = getAreaForRange(range);
+                    if (!areaCounts[area]) areaCounts[area] = 0;
+                    areaCounts[area]++;
+                });
+                let sortedAreas = Object.entries(areaCounts).sort(([,a], [,b]) => b - a);
+                let topArea = sortedAreas[0] ? sortedAreas[0][0] : '';
+                let topCount = sortedAreas[0] ? sortedAreas[0][1] : 0;
+                let secondArea = sortedAreas[1] ? sortedAreas[1][0] : '';
+                let secondCount = sortedAreas[1] ? sortedAreas[1][1] : 0;
+                let displayTop = topArea === 'Unknown' ? 'Non-geographic' : topArea;
+                let summary = `The selected provider, ${selectedProvider}, owns ${ranges.length} number ranges. This means they own ${totalNumbers.toLocaleString()} numbers in total (please note, this number might be invalid due to many numbers being ported away to different providers). The most popular area code they own is ${displayTop}, they own ${topCount} of those ranges.`;
+                if (secondCount > 1) {
+                    let displaySecond = secondArea === 'Unknown' ? 'Non-geographic' : secondArea;
+                }
+                summary = `<div class="summary">${summary}</div>`;
+                let tableHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Number Range</th>
+                                <th>Area code</th>
+                                <th>Provider</th>
+                            </tr>
+                        </thead>
+                        <tbody>
                 `;
-            });
-            tableHTML += '</tbody></table>';
-            tableDiv.innerHTML = summary + tableHTML;
+                ranges.forEach(range => {
+                    const L = range.length;
+                    const numXs = 12 - L;
+                    const xs = 'X'.repeat(numXs);
+                    const formattedRange = '0' + range.substring(2) + xs;
+                    const area = getAreaForRange(range);
+                    tableHTML += `
+                        <tr>
+                            <td>${formattedRange}</td>
+                            <td>${area}</td>
+                            <td>${selectedProvider}</td>
+                        </tr>
+                    `;
+                });
+                tableHTML += '</tbody></table>';
+                tableDiv.innerHTML = summary + tableHTML;
+
+                // Hide loading spinner
+                loadingDiv.style.display = 'none';
+            }, 0);
         }
 
         function getRelativeTime(updateDateStr) {
