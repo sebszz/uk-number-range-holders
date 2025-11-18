@@ -237,7 +237,7 @@
                     <tr>
                         <td>${index + 1}</td>
                         <td>${item.provider}</td>
-                        <td>${item.ranges}</td>
+                        <td>${item.ranges.toLocaleString()}</td>
                     </tr>
                 `;
             });
@@ -283,9 +283,15 @@
             let secondCount = sortedAreas[1] ? sortedAreas[1][1] : 0;
             let displayTop = topArea === 'Unknown' ? 'Non-geographic' : topArea;
             let summary = `The selected provider, ${selectedProvider}, owns ${ranges.length} number ranges. This means they own ${totalNumbers.toLocaleString()} numbers in total. The most popular area code they own is ${displayTop}, they own ${topCount} of those ranges.`;
-            if (secondCount > 0) {
+            if (secondCount > 1) {
                 let displaySecond = secondArea === 'Unknown' ? 'Non-geographic' : secondArea;
-                summary += ` The second place is ${displaySecond}, with ${secondCount} ranges owned.`;
+                let secondPlaceText;
+                if (secondCount === 1) {
+                    secondPlaceText = ` The second place is ${displaySecond}, with 1 range owned.`;
+                } else {
+                    secondPlaceText = ` The second place is ${displaySecond}, with ${secondCount} ranges owned.`;
+                }
+                summary += secondPlaceText;
             }
             summary = `<div class="summary">${summary}</div>`;
             let tableHTML = `
