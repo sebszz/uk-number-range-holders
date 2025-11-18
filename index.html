@@ -19,6 +19,36 @@
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
+        /* Tab Styles */
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .tab-button {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: #6c757d;
+            border-bottom: 2px solid transparent;
+            transition: color 0.3s, border-color 0.3s;
+        }
+        .tab-button.active {
+            color: #007bff;
+            border-bottom-color: #007bff;
+        }
+        .tab-button:hover {
+            color: #0056b3;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
         input[type="text"] {
             width: 70%;
             padding: 10px;
@@ -53,23 +83,177 @@
         h4 {
             margin-bottom: 5px;
         }
-        p{
-            margin-top:0;
+        p {
+            margin-top: 0;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: 500;
+        }
+        .summary {
+            margin-bottom: 15px;
+            font-weight: 500;
+            color: #495057;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>UK Phone Number Information</h1>
-        <p>Enter a UK phone number (e.g., 01603112345 or +441603112345):</p>
-        <input type="text" id="phoneInput" placeholder="Enter phone number">
-        <button onclick="getPhoneInfo()">Get Info</button>
-        <div id="result"></div>
+        
+        <div class="tab-buttons">
+            <button class="tab-button active" onclick="switchTab('number-lookup')">Number lookup</button>
+            <button class="tab-button" onclick="switchTab('provider-lookup')">Provider lookup</button>
+        </div>
+
+        <div id="number-lookup" class="tab-content active">
+            <p>Enter a UK phone number (e.g., 01603112345 or +441603112345):</p>
+            <input type="text" id="phoneInput" placeholder="Enter phone number">
+            <button onclick="getPhoneInfo()">Get Info</button>
+            <div id="result"></div>
+        </div>
+
+        <div id="provider-lookup" class="tab-content">
+            <select id="providerSelect">
+                <option value="">Select a provider...</option>
+            </select>
+            <div id="rangesTable"></div>
+        </div>
     </div>
 
     <script>
         let providers = {};
         let areaMap = {};
+        let uniqueProviders = [];
+
+        function switchTab(tabName) {
+            // Hide all tab contents
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+            
+            // Remove active from all buttons
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(button => button.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        async function loadProvidersForTab() {
+            try {
+                providers = await loadJsonLocalOrRemote('./numberProviders.json', 'https://raw.githubusercontent.com/sebszz/uk-number-range-holders/refs/heads/main/numberProviders.json');
+                const areaData = await loadJsonLocalOrRemote('./areaCodes.json', 'https://raw.githubusercontent.com/sebszz/uk-number-range-holders/refs/heads/main/areaCodes.json');
+                areaMap = {};
+                for (let k in areaData) {
+                    areaMap[k.substring(1)] = areaData[k]; // Remove '+' to get '442890'
+                }
+                populateProviderDropdown();
+            } catch (e) {
+                document.getElementById('rangesTable').innerHTML = '<p>Error loading provider data.</p>';
+            }
+        }
+
+        function populateProviderDropdown() {
+            uniqueProviders = [...new Set(Object.values(providers))].sort();
+            const select = document.getElementById('providerSelect');
+            uniqueProviders.forEach(provider => {
+                const option = document.createElement('option');
+                option.value = provider;
+                option.textContent = provider;
+                select.appendChild(option);
+            });
+            select.onchange = showProviderRanges;
+        }
+
+        function getAreaForRange(rangeKey) {
+            let bestAreaKey = '';
+            let bestALength = 0;
+            for (let key in areaMap) {
+                if (rangeKey.startsWith(key) && key.length > bestALength) {
+                    bestALength = key.length;
+                    bestAreaKey = key;
+                }
+            }
+            return bestAreaKey ? areaMap[bestAreaKey] : 'Non-geographic';
+        }
+
+        function showProviderRanges() {
+            const selectedProvider = document.getElementById('providerSelect').value;
+            const tableDiv = document.getElementById('rangesTable');
+            if (!selectedProvider) {
+                tableDiv.innerHTML = '';
+                return;
+            }
+
+            const ranges = Object.keys(providers).filter(key => providers[key] === selectedProvider).sort();
+            let totalNumbers = 0;
+            let areaCounts = {};
+            ranges.forEach(range => {
+                const L = range.length;
+                const size = Math.pow(10, 12 - L);
+                totalNumbers += size;
+                const area = getAreaForRange(range);
+                if (!areaCounts[area]) areaCounts[area] = 0;
+                areaCounts[area]++;
+            });
+            let sortedAreas = Object.entries(areaCounts).sort(([,a], [,b]) => b - a);
+            let topArea = sortedAreas[0] ? sortedAreas[0][0] : '';
+            let topCount = sortedAreas[0] ? sortedAreas[0][1] : 0;
+            let secondArea = sortedAreas[1] ? sortedAreas[1][0] : '';
+            let secondCount = sortedAreas[1] ? sortedAreas[1][1] : 0;
+            let displayTop = topArea === 'Unknown' ? 'Non-geographic' : topArea;
+            let summary = `The selected provider, ${selectedProvider}, owns ${ranges.length} number ranges. This means they own ${totalNumbers.toLocaleString()} numbers in total. The most popular area code they own is ${displayTop}, they own ${topCount} of those ranges.`;
+            if (secondCount > 0) {
+                let displaySecond = secondArea === 'Unknown' ? 'Non-geographic' : secondArea;
+                summary += ` The second place is ${displaySecond}, with ${secondCount} ranges owned.`;
+            }
+            summary = `<div class="summary">${summary}</div>`;
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Number Range</th>
+                            <th>Area code</th>
+                            <th>Provider</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            ranges.forEach(range => {
+                const L = range.length;
+                const numXs = 12 - L;
+                const xs = 'X'.repeat(numXs);
+                const formattedRange = '0' + range.substring(2) + xs;
+                const area = getAreaForRange(range);
+                tableHTML += `
+                    <tr>
+                        <td>${formattedRange}</td>
+                        <td>${area}</td>
+                        <td>${selectedProvider}</td>
+                    </tr>
+                `;
+            });
+            tableHTML += '</tbody></table>';
+            tableDiv.innerHTML = summary + tableHTML;
+        }
 
         function getRelativeTime(updateDateStr) {
             const [day, month, year] = updateDateStr.split('/').map(Number);
@@ -198,7 +382,9 @@
                 }
             }
             const providerName = bestProviderKey ? providers[bestProviderKey] : 'Unknown';
-            const rangeStr = bestProviderKey ? '0' + bestProviderKey.substring(2) + 'XXXXX' : 'Unknown';
+            const L = bestProviderKey ? bestProviderKey.length : 0;
+            const numXs = L ? 12 - L : 5;
+            const rangeStr = bestProviderKey ? '0' + bestProviderKey.substring(2) + 'X'.repeat(numXs) : 'Unknown';
 
             // Determine city/location
             let cityName;
@@ -214,7 +400,7 @@
                         bestAreaKey = key;
                     }
                 }
-                cityName = bestAreaKey ? areaMap[bestAreaKey] : 'Unknown';
+                cityName = bestAreaKey ? areaMap[bestAreaKey] : 'Non-geographic';
             }
 
             // Construct location sentence
@@ -241,6 +427,11 @@
 
             resultDiv.innerHTML = result + additionalLink;
         }
+
+        // Preload providers on page load to populate dropdown immediately
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProvidersForTab();
+        });
     </script>
 </body>
 </html>
