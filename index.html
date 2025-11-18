@@ -11,10 +11,12 @@
             max-width: 600px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f4f4f4;
+            background-color: #192640;
+            color:#ddd;
         }
         .container {
-            background: white;
+            border: 1px solid #3b4c6f;
+            background-color: #1f2d4a;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
@@ -31,17 +33,13 @@
             border: none;
             cursor: pointer;
             font-size: 16px;
-            font-weight: 500;
-            color: #6c757d;
+            color: #ddd;
             border-bottom: 2px solid transparent;
             transition: color 0.3s, border-color 0.3s;
         }
         .tab-button.active {
-            color: #007bff;
-            border-bottom-color: #007bff;
-        }
-        .tab-button:hover {
-            color: #0056b3;
+            background-color: #3b4c6f;
+            font-weight: bold;
         }
         .tab-content {
             display: none;
@@ -53,12 +51,14 @@
             width: 70%;
             padding: 10px;
             margin-right: 10px;
-            border: 1px solid #ccc;
+            border: #3b4c6f 1px solid;
+            background-color: #3b4c6f;
             border-radius: 4px;
+            color: #ddd;
         }
         button {
             padding: 10px 20px;
-            background-color: #007bff;
+            background-color: #16d041;
             color: white;
             border: none;
             border-radius: 4px;
@@ -70,7 +70,7 @@
         #result {
             margin-top: 20px;
             padding: 15px;
-            background-color: #e9ecef;
+            background-color: #3b4c6f;
             border-radius: 4px;
         }
         #result a {
@@ -89,7 +89,9 @@
         select {
             width: 100%;
             padding: 10px;
-            border: 1px solid #ccc;
+            border: #3b4c6f 1px solid;
+            background-color: #3b4c6f;
+            color: #ddd;
             border-radius: 4px;
             margin-bottom: 20px;
         }
@@ -101,16 +103,16 @@
         th, td {
             padding: 8px;
             text-align: left;
-            border-bottom: 1px solid #dee2e6;
+            border: 1px solid #3b4c6f;
+            
         }
         th {
-            background-color: #f8f9fa;
+            background-color: #3b4c6f;
             font-weight: 500;
         }
         .summary {
             margin-bottom: 15px;
             font-weight: 500;
-            color: #495057;
         }
     </style>
 </head>
@@ -282,7 +284,7 @@
             let secondArea = sortedAreas[1] ? sortedAreas[1][0] : '';
             let secondCount = sortedAreas[1] ? sortedAreas[1][1] : 0;
             let displayTop = topArea === 'Unknown' ? 'Non-geographic' : topArea;
-            let summary = `The selected provider, ${selectedProvider}, owns ${ranges.length} number ranges. This means they own ${totalNumbers.toLocaleString()} numbers in total. The most popular area code they own is ${displayTop}, they own ${topCount} of those ranges.`;
+            let summary = `The selected provider, ${selectedProvider}, owns ${ranges.length} number ranges. This means they own ${totalNumbers.toLocaleString()} numbers in total (please note, this number might be invalid due to many numbers being ported away to different providers). The most popular area code they own is ${displayTop}, they own ${topCount} of those ranges.`;
             if (secondCount > 1) {
                 let displaySecond = secondArea === 'Unknown' ? 'Non-geographic' : secondArea;
                 let secondPlaceText;
