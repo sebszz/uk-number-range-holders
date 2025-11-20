@@ -1,1 +1,3 @@
 A simple, standalone web-based tool for looking up UK phone number information, including the provider, geographic location (if applicable), and a link to check for spam/call reports. Built with HTML, CSS, and vanilla JavaScript. No external dependencies beyond browser APIs and remote JSON data (with local fallback).
+
+Live demo: https://sebszz.github.io/uk-number-range-holders/
