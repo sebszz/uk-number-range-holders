@@ -203,6 +203,7 @@
             <button class="tab-button active" onclick="switchTab('number-lookup')">Number lookup</button>
             <button class="tab-button" onclick="switchTab('provider-lookup')">Provider lookup</button>
             <button class="tab-button" onclick="switchTab('top-providers')">Top 100 providers</button>
+            <button class="tab-button" onclick="switchTab('find-range')">Find range</button>
         </div>
 
         <div id="number-lookup" class="tab-content active">
@@ -224,6 +225,65 @@
         <div id="top-providers" class="tab-content">
             <p>List of top 100 providers based on number ranges owned:</p>
             <div id="topProvidersTable"></div>
+        </div>
+
+        <div id="find-range" class="tab-content">
+            <p>Want to know which provider owns ranges containing numbers &quot;77777&quot;?</p>
+            <input type="tel" id="rangeInput" placeholder="eg. 77777">
+            <button onclick="findRange()">Find range</button>
+            <script>
+                async function findRange() {
+                    const input = document.getElementById('rangeInput').value.trim();
+                    const resultDiv = document.getElementById('matchingNumberRanges');
+                    
+                    if (!input) {
+                        resultDiv.style.display = 'block';
+                        resultDiv.innerHTML = '<p>Please enter a number pattern to search.</p>';
+                        return;
+                    }
+
+                    // Load providers if not already loaded
+                    if (Object.keys(providers).length === 0) {
+                        try {
+                            providers = await loadJsonLocalOrRemote('./numberProviders.json', 'https://raw.githubusercontent.com/sebszz/uk-number-range-holders/refs/heads/main/numberProviders.json');
+                        } catch (e) {
+                            resultDiv.style.display = 'block';
+                            resultDiv.innerHTML = '<p>Error loading provider data.</p>';
+                            return;
+                        }
+                    }
+
+                    // Find matching ranges
+                    const matches = [];
+                    for (let key in providers) {
+                        const displayRange = '0' + key.substring(2);
+                        if (displayRange.includes(input)) {
+                            matches.push({ range: key, provider: providers[key], displayRange: displayRange });
+                        }
+                    }
+
+                    resultDiv.style.display = 'block';
+
+                    if (matches.length === 0) {
+                        resultDiv.innerHTML = `<p>No ranges found containing "${input}".</p>`;
+                        return;
+                    }
+
+                    // Display results
+                    let html = `<div class="summary">Found ${matches.length} range${matches.length === 1 ? '' : 's'} containing "${input}":</div>`;
+                    html += '<table><thead><tr><th>Number Range</th><th>Provider</th></tr></thead><tbody>';
+                    
+                    matches.forEach(match => {
+                        const numXs = 12 - match.range.length;
+                        const formattedRange = match.displayRange + 'X'.repeat(numXs);
+                        html += `<tr><td>${formattedRange}</td><td>${match.provider}</td></tr>`;
+                    });
+                    
+                    html += '</tbody></table>';
+                    resultDiv.innerHTML = html;
+                }
+            </script>
+            <div id="matchingNumberRanges" style="display: none;"></div>
         </div>
     </div>
 
