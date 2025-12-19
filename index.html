@@ -7,9 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Rubik', sans-serif;
-            max-width: 600px;
-            margin: 0 auto;
+            font-family: 'Rubik', Arial, sans-serif;
             background-color: #192640;
             color:#ddd;
             font-size: 16px;
@@ -19,7 +17,8 @@
             opacity: 0.6;
         }
         .container {
-            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
         /* Tab Styles */
@@ -90,6 +89,7 @@
         }
         h1 {
             margin-top:0;
+            font-size: 1.6rem;
         }
         p {
             margin-top: 0;
@@ -142,12 +142,13 @@
         }
         @media screen and (min-width:600px) {
             body {
-                padding: 20px;
+                margin: 20px;
             }
             .container {
                 border-radius: 8px;
                 border: 1px solid #3b4c6f;
                 background-color: #1f2d4a;
+                padding: 20px;
             }
             .tab-button {
                 font-size: 16px;
@@ -165,20 +166,43 @@
             th, td {
                 font-size: 1rem;
             }
-            h1 {
-            margin-top:20px;
+
         }
+        .nav-links {
+            display: block;
+            margin-bottom: 20px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        .nav-links a {
+            color: #a1aabd;
+            text-decoration: underline;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            margin:0 10px;
+            
         }
     </style>
 </head>
 <body>
+    <!-- <div class="nav-links" style="margin-bottom: 20px;">
+    <a href="file:///F:/websites/Numbers%20Generator/number-generator.html">Number Generator</a>
+     / 
+     <a href="file:///F:/websites/ip-range-generator/index.html">IP Range Generator</a>
+     / 
+        <a href="file:///F:/websites/uk-number-range-holders/index.html">Number Lookup</a>
+         / 
+         <a href="file:///F:/websites/proxy-checker/proxy-checker.html">Proxy Checker</a>
+          / 
+         <a href="file:///F:/websites/phone-number-extractor/phone-extractor.html">Number Extractor</a>
+    </div> -->
     <div class="container">
         <h1>UK Phone Number Information</h1>
         
         <div class="tab-buttons">
             <button class="tab-button active" onclick="switchTab('number-lookup')">Number lookup</button>
             <button class="tab-button" onclick="switchTab('provider-lookup')">Provider lookup</button>
-            <button class="tab-button" onclick="switchTab('top-providers')">Top 30 providers</button>
+            <button class="tab-button" onclick="switchTab('top-providers')">Top 100 providers</button>
         </div>
 
         <div id="number-lookup" class="tab-content active">
@@ -198,7 +222,7 @@
         </div>
 
         <div id="top-providers" class="tab-content">
-            <p>List of top 30 providers based on number ranges owned:</p>
+            <p>List of top 100 providers based on number ranges owned:</p>
             <div id="topProvidersTable"></div>
         </div>
     </div>
@@ -245,7 +269,7 @@
         }
 
         function populateProviderDropdown() {
-            uniqueProviders = [...new Set(Object.values(providers))].sort();
+            uniqueProviders = [...new Set(Object.values(providers))].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
             const select = document.getElementById('providerSelect');
             uniqueProviders.forEach(provider => {
                 const option = document.createElement('option');
@@ -272,7 +296,7 @@
             topProviders = Object.entries(providerStats)
                 .map(([prov, stats]) => ({ provider: prov, ...stats }))
                 .sort((a, b) => b.ranges - a.ranges)
-                .slice(0, 30);
+                .slice(0, 100);
         }
 
         function showTopProviders() {
@@ -346,11 +370,62 @@
                 });
                 let sortedAreas = Object.entries(areaCounts).sort(([,a], [,b]) => b - a);
                 let topArea = sortedAreas[0] ? sortedAreas[0][0] : '';
-                let topCount = sortedAreas[0] ? sortedAreas[0][1] : 0;
+                // let topCount = sortedAreas[0] ? sortedAreas[0][1] : 0;
                 let secondArea = sortedAreas[1] ? sortedAreas[1][0] : '';
                 let secondCount = sortedAreas[1] ? sortedAreas[1][1] : 0;
-                let displayTop = topArea === 'Unknown' ? 'Non-geographic' : topArea;
-                let summary = `The selected provider, ${selectedProvider}, owns ${ranges.length} number ranges. This means they own ${totalNumbers.toLocaleString()} numbers in total (please note, this number might be invalid due to many numbers being ported away to different providers). The most popular area code they own is ${displayTop}, they own ${topCount} of those ranges.`;
+                // let displayTop = topArea === 'Unknown' ? 'Non-geographic' : topArea;
+                let rangeCounts = {
+                    '01': 0,
+                    '02': 0,
+                    '03': 0,
+                    '080': 0,
+                    '084': 0,
+                    '09': 0,
+                    '07': 0
+                };
+
+                ranges.forEach(range => {
+                    const displayRange = '0' + range.substring(2);
+                    if (displayRange.startsWith('01')) {
+                        rangeCounts['01']++;
+                    } 
+                    else if (displayRange.startsWith('02')) {
+                        rangeCounts['02']++;
+                    }
+                    else if (displayRange.startsWith('03')) {
+                        rangeCounts['03']++;
+                    } else if (displayRange.startsWith('080')) {
+                        rangeCounts['080']++;
+                    } else if (displayRange.startsWith('084')) {
+                        rangeCounts['084']++;
+                    } else if (displayRange.startsWith('09')) {
+                        rangeCounts['09']++;
+                    } else if (displayRange.startsWith('07')) {
+                        rangeCounts['07']++;
+                    }
+                });
+
+                let rangeBreakdown = [];
+                if (rangeCounts['01'] > 0) rangeBreakdown.push(`${rangeCounts['01']} 01XXXXXXXXX`);
+                if (rangeCounts['02'] > 0) rangeBreakdown.push(`${rangeCounts['02']} 02XXXXXXXXX`);
+                if (rangeCounts['03'] > 0) rangeBreakdown.push(`${rangeCounts['03']} 03XXXXXXXXX`);
+                if (rangeCounts['080'] > 0) rangeBreakdown.push(`${rangeCounts['080']} 080XXXXXXXX`);
+                if (rangeCounts['084'] > 0) rangeBreakdown.push(`${rangeCounts['084']} 084XXXXXXXX`);
+                if (rangeCounts['09'] > 0) rangeBreakdown.push(`${rangeCounts['09']} 09XXXXXXXXX`);
+                if (rangeCounts['07'] > 0) rangeBreakdown.push(`${rangeCounts['07']} 07XXXXXXXXX`);
+
+                let rangeBreakdownText = '';
+                if (rangeBreakdown.length > 0) {
+                    rangeBreakdownText = `Ranges breakdown:<br/><br/>`;
+                    rangeBreakdown.forEach(item => {
+                        const parts = item.split(' ');
+                        const count = parts[0];
+                        const rangeType = parts.slice(1).join(' ');
+                        rangeBreakdownText += `• ${rangeType} - ${Number(count).toLocaleString()}  ${count === '1' ? 'range owned' : 'ranges owned'}<br/>`;
+                    });
+                }
+
+                let summary = `The selected provider, ${selectedProvider}, owns ${ranges.length.toLocaleString()} number range${ranges.length === 1 ? '' : 's'}. This means they own ${totalNumbers.toLocaleString()} numbers in total (please note, this number might be a bit smaller due to some numbers being ported away to different providers).<br/><br/>${ranges.length > 1 ? rangeBreakdownText : ''}`;
                 if (secondCount > 1) {
                     let displaySecond = secondArea === 'Unknown' ? 'Non-geographic' : secondArea;
                 }
@@ -549,11 +624,11 @@
             }
 
             // Date and relative time
-            const updateDateStr = '20/11/2025';
+            const updateDateStr = '19/12/2025';
             const relativeTime = getRelativeTime(updateDateStr);
 
             // Construct result with hyperlink
-            const result = `${providerPart} ${locationSentence} <br/><br/>Please note, the last update of number range holders has been updated on ${updateDateStr} (${relativeTime}). For the most up to date results go to <a href="https://www.ofcom.org.uk/phones-and-broadband/phone-numbers/numbering-data" target="_blank">Ofcom website</a>. <h4>Number is ported?</h4>It's possible that ${displayNum} may have been ported to another provider. Number porting information is not publically available.`;
+            const result = `${providerPart} ${locationSentence} <br/><br/>The last update of number range holders has been updated on ${updateDateStr} (${relativeTime}). For the most up to date results go to <a href="https://www.ofcom.org.uk/phones-and-broadband/phone-numbers/numbering-data" target="_blank">Ofcom website</a>. <h4>Number is ported?</h4>It's possible that ${displayNum} may have been ported to another provider. Number porting information is not publically available.`;
 
             // Additional link
             const phonelyLink = `https://www.phonely.co.uk/who-called-me/${displayNum}`;
