@@ -136,6 +136,9 @@
             margin: 20px auto;
             display: none;
         }
+        #matchingNumberRanges {
+            margin-top:30px;
+        }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -151,7 +154,7 @@
                 padding: 20px;
             }
             .tab-button {
-                font-size: 16px;
+                font-size: 14px;
             }
             input[type="tel"] {
                 width: 70%;
@@ -271,12 +274,13 @@
 
                     // Display results
                     let html = `<div class="summary">Found ${matches.length} range${matches.length === 1 ? '' : 's'} containing "${input}":</div>`;
-                    html += '<table><thead><tr><th>Number Range</th><th>Provider</th></tr></thead><tbody>';
+                    html += '<table><thead><tr><th>Number Range</th><th>Provider</th><th>Numbers in range</th></tr></thead><tbody>';
                     
                     matches.forEach(match => {
                         const numXs = 12 - match.range.length;
                         const formattedRange = match.displayRange + 'X'.repeat(numXs);
-                        html += `<tr><td>${formattedRange}</td><td>${match.provider}</td></tr>`;
+                        const numbersAvailable = Math.pow(10, numXs);
+                        html += `<tr><td>${formattedRange}</td><td>${match.provider}</td><td>${numbersAvailable.toLocaleString()}</td></tr>`;
                     });
                     
                     html += '</tbody></table>';
@@ -497,6 +501,7 @@
                                 <th>Number Range</th>
                                 <th>Area code</th>
                                 <th>Provider</th>
+                                <th>Numbers in range</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -507,11 +512,13 @@
                     const xs = 'X'.repeat(numXs);
                     const formattedRange = '0' + range.substring(2) + xs;
                     const area = getAreaForRange(range);
+                    const numbersAvailable = Math.pow(10, numXs);
                     tableHTML += `
                         <tr>
                             <td>${formattedRange}</td>
                             <td>${area}</td>
                             <td>${selectedProvider}</td>
+                            <td>${numbersAvailable.toLocaleString()}</td>
                         </tr>
                     `;
                 });
